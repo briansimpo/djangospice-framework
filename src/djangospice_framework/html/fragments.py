@@ -1,9 +1,11 @@
 from __future__ import annotations
+
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from typing import Any, Self, overload
 
 from django.http import HttpRequest
+from django.utils.safestring import SafeString, mark_safe
 
 from .component import HTMLComponent
 
@@ -14,7 +16,7 @@ class HTMLFragment(HTMLComponent):
     Represents a renderable HTML fragment.
     HTMLFragments are the building blocks for Components, Widgets, Layouts, etc.
     """
-    
+
     def get_context(self) -> dict[str, Any]:
         ctx = super().get_context()
         ctx["fragment"] = self
@@ -32,20 +34,39 @@ class HTMLFragments:
         self,
         fragments: Iterable[HTMLFragment] | None = None,
     ) -> None:
-        self._items: list[HTMLFragment] = list(fragments or [])
+        self._items: list[HTMLFragment] = []
+        if fragments:
+            self.extend(fragments)
 
     # ------------------------------------------------------------------
     # Collection API
     # ------------------------------------------------------------------
 
     def add(self, fragment: HTMLFragment) -> Self:
-        """Add a fragment."""
+        """Add a single fragment."""
         self._items.append(fragment)
         return self
 
-    def extend(self, *fragments: HTMLFragment) -> Self:
-        """Add multiple fragments."""
-        self._items.extend(fragments)
+    def extend(self, *fragments: HTMLFragment | Iterable[HTMLFragment]) -> Self:
+        """
+        Add multiple fragments. Accepts individual HTMLFragment arguments
+        or iterables containing fragments.
+        """
+        for item in fragments:
+            if isinstance(item, HTMLFragment):
+                self._items.append(item)
+            elif isinstance(item, Iterable) and not isinstance(item, (str, bytes)):
+                for sub_item in item:
+                    if isinstance(sub_item, HTMLFragment):
+                        self._items.append(sub_item)
+                    else:
+                        raise TypeError(
+                            f"Expected HTMLFragment, got {type(sub_item).__name__}"
+                        )
+            else:
+                raise TypeError(
+                    f"Expected HTMLFragment or Iterable, got {type(item).__name__}"
+                )
         return self
 
     def remove(self, fragment: HTMLFragment) -> Self:
@@ -62,11 +83,12 @@ class HTMLFragments:
     # Rendering
     # ------------------------------------------------------------------
 
-    def render(self, request: HttpRequest | None = None) -> str:
-        """Render every fragment into a combined HTML string."""
-        return "".join(
+    def render(self, request: HttpRequest | None = None) -> SafeString:
+        """Render every fragment into a combined, safe HTML string."""
+        rendered = "".join(
             fragment.render(request=request) for fragment in self._items
         )
+        return mark_safe(rendered)
 
     # ------------------------------------------------------------------
     # Pythonic Protocols / Helpers
@@ -90,6 +112,13 @@ class HTMLFragments:
         """Support membership checks (e.g., `if fragment in fragments`)."""
         return fragment in self._items
 
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, HTMLFragments):
+            return self._items == other._items
+        if isinstance(other, list):
+            return self._items == other
+        return False
+
     @overload
     def __getitem__(self, index: int) -> HTMLFragment: ...
 
@@ -102,17 +131,19 @@ class HTMLFragments:
             return HTMLFragments(self._items[index])
         return self._items[index]
 
-    def __add__(self, other: Iterable[HTMLFragment]) -> HTMLFragments:
+    def __add__(self, other: Any) -> HTMLFragments:
         """Support collection concatenation using the `+` operator."""
-        if not isinstance(other, Iterable):
+        if isinstance(other, (str, bytes)) or not isinstance(other, Iterable):
             return NotImplemented
-        return HTMLFragments(self._items + list(other))
+        new_collection = HTMLFragments(self._items)
+        new_collection.extend(other)
+        return new_collection
 
-    def __iadd__(self, other: Iterable[HTMLFragment]) -> Self:
+    def __iadd__(self, other: Any) -> Self:
         """Support in-place addition using the `+=` operator."""
-        if not isinstance(other, Iterable):
+        if isinstance(other, (str, bytes)) or not isinstance(other, Iterable):
             return NotImplemented
-        self._items.extend(other)
+        self.extend(other)
         return self
 
     def __repr__(self) -> str:
