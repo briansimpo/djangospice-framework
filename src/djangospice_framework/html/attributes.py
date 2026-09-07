@@ -5,18 +5,18 @@ from dataclasses import dataclass, field
 from html import escape
 from typing import Any, ClassVar, Literal, Self
 
-from djangospice_framework.core.serializable import Serializable
 from djangospice_framework.core.payload import Payload
+from djangospice_framework.core.serializable import Serializable
 
 HTTPMethod = Literal["get", "post", "put", "patch", "delete"]
 
 
 @dataclass(slots=True)
 class HTMXAttributes(Serializable):
-    """
-    Represents HTMX HTML attributes.
+    """Represents HTMX HTML attributes with a fluent builder interface.
 
-    This class is transport-agnostic and can be used by:
+    This class is transport-agnostic and compiles cleanly into standard HTML attribute
+    strings or dictionaries for:
     - Widgets
     - Forms
     - Components
@@ -27,74 +27,128 @@ class HTMXAttributes(Serializable):
     # ------------------------------------------------------------------
     # Standard HTML
     # ------------------------------------------------------------------
-    id: str | None = None
-    css_class: str = ""
 
-    #: Additional standard HTML attributes (e.g., placeholder, name).
+    id: str | None = None
+    """Optional `id` attribute."""
+
+    css_class: str = ""
+    """Space-separated string of CSS classes (`class` attribute)."""
+
     attrs: Payload = field(default_factory=Payload)
+    """Additional standard HTML attributes (e.g., placeholder, name)."""
 
     # ------------------------------------------------------------------
     # Swapping
     # ------------------------------------------------------------------
+
     target: str | None = None
+    """CSS selector targeting the element to swap (`hx-target`)."""
+
     swap: str | None = None
+    """Swap strategy (e.g., `outerHTML`, `innerHTML`) (`hx-swap`)."""
+
     swap_oob: str | None = None
+    """Out-of-band swap instructions (`hx-swap-oob`)."""
 
     select: str | None = None
+    """CSS selector choosing content from the response (`hx-select`)."""
+
     select_oob: str | None = None
+    """Out-of-band selection selector (`hx-select-oob`)."""
 
     # ------------------------------------------------------------------
     # Triggers & Execution
     # ------------------------------------------------------------------
+
     trigger: str | None = None
+    """Event trigger configuration (`hx-trigger`)."""
+
     sync: str | None = None
-    
+    """Request synchronization rules (`hx-sync`)."""
+
     disable: bool | None = None
+    """Disables HTMX processing on element/children (`hx-disable`)."""
+
     disinherit: str | None = None
+    """Disinherits HTMX attributes from parent elements (`hx-disinherit`)."""
 
     # ------------------------------------------------------------------
     # Navigation & History
     # ------------------------------------------------------------------
+
     push_url: bool | str | None = None
+    """Pushes a URL into browser history (`hx-push-url`)."""
+
     replace_url: bool | str | None = None
+    """Replaces the current URL in browser history (`hx-replace-url`)."""
+
     boost: bool | None = None
+    """Enables progressive enhancement for links and forms (`hx-boost`)."""
 
     history: bool | None = None
+    """Prevents snapshotting historical states (`hx-history`)."""
+
     history_elt: bool | None = None
+    """Marks element for history snapshot caching (`hx-history-elt`)."""
 
     # ------------------------------------------------------------------
     # Request Configuration
     # ------------------------------------------------------------------
-    include: str | None = None
-    params: str | None = None
 
-    # Support dicts (Payload) OR raw strings for 'javascript:' evaluation
+    include: str | None = None
+    """CSS selector for additional element values to include (`hx-include`)."""
+
+    params: str | None = None
+    """Filters parameters submitted with the request (`hx-params`)."""
+
     vals: Payload | str | dict = field(default_factory=Payload)
+    """Values submitted with the request (`hx-vals`). Supports dicts or raw `js:` strings."""
+
     headers: Payload | str | dict = field(default_factory=Payload)
+    """Request headers sent with the HTMX request (`hx-headers`)."""
 
     encoding: str | None = None
+    """Request body encoding type (`hx-encoding`)."""
+
     ext: str | None = None
+    """HTMX extensions enabled on this element (`hx-ext`)."""
 
     # ------------------------------------------------------------------
     # UX & Feedback
     # ------------------------------------------------------------------
+
     indicator: str | None = None
+    """CSS selector for a loading indicator element (`hx-indicator`)."""
+
     disabled_elt: str | None = None
+    """Elements to disable during the request lifecycle (`hx-disabled-elt`)."""
 
     confirm: str | None = None
+    """Confirmation dialog prompt message (`hx-confirm`)."""
+
     prompt: str | None = None
+    """JavaScript prompt input box message (`hx-prompt`)."""
+
     preserve: bool | None = None
+    """Preserves element state across swaps (`hx-preserve`)."""
 
     # ------------------------------------------------------------------
     # Events & Websockets
     # ------------------------------------------------------------------
+
     on: Payload = field(default_factory=Payload)
+    """Inline event handlers mapped to `hx-on:*` attributes."""
+
     ws: str | None = None
+    """WebSocket connection target (`hx-ws`)."""
+
     sse: str | None = None
+    """Server-Sent Events source (`hx-sse`)."""
 
     # ------------------------------------------------------------------
     # Mapping
     # ------------------------------------------------------------------
+
     ATTRIBUTE_MAP: ClassVar[dict[str, str]] = {
         # Requests
         "get": "hx-get",
@@ -135,61 +189,76 @@ class HTMXAttributes(Serializable):
     }
 
     # ------------------------------------------------------------------
-    # Fluent API
+    # Fluent API Builders
     # ------------------------------------------------------------------
 
     def request(self, method: HTTPMethod | str, url: str) -> Self:
-        """Set the HTMX request method and URL target."""
+        """Sets the HTMX request method and destination URL."""
         method_lower = method.lower()
         if method_lower not in {"get", "post", "put", "patch", "delete"}:
             raise ValueError(f"Unsupported HTMX request method: {method}")
         setattr(self, method_lower, url)
         return self
-    
-    def get(self, url):
+
+    def get(self, url: str) -> Self:
+        """Shorthand for `request('get', url)`."""
         return self.request("get", url)
-    
-    def post(self, url):
+
+    def post(self, url: str) -> Self:
+        """Shorthand for `request('post', url)`."""
         return self.request("post", url)
-    
-    def put(self, url):
+
+    def put(self, url: str) -> Self:
+        """Shorthand for `request('put', url)`."""
         return self.request("put", url)
-    
-    def patch(self, url):
+
+    def patch(self, url: str) -> Self:
+        """Shorthand for `request('patch', url)`."""
         return self.request("patch", url)
-    
-    def delete(self, url):
+
+    def delete(self, url: str) -> Self:
+        """Shorthand for `request('delete', url)`."""
         return self.request("delete", url)
 
     def swap_to(self, strategy: str) -> Self:
+        """Sets the `hx-swap` strategy."""
         self.swap = strategy
         return self
 
     def target_to(self, selector: str) -> Self:
+        """Sets the `hx-target` selector."""
         self.target = selector
         return self
 
     def trigger_on(self, trigger: str) -> Self:
+        """Sets the `hx-trigger` event rules."""
         self.trigger = trigger
         return self
-        
+
     def include_data(self, selector: str) -> Self:
+        """Sets the `hx-include` selector for extra payload fields."""
         self.include = selector
         return self
 
     def show_indicator(self, selector: str) -> Self:
+        """Sets the `hx-indicator` loading element selector."""
         self.indicator = selector
         return self
 
+    def confirm_with(self, message: str) -> Self:
+        """Sets an `hx-confirm` dialog prompt before request execution."""
+        self.confirm = message
+        return self
+
     def push(self, url: bool | str = True) -> Self:
-        """Update the browser's history URL."""
+        """Updates the browser's history URL (`hx-push-url`)."""
         self.push_url = url
         return self
 
     def with_vals(self, raw_js_str: str | None = None, **kwargs: Any) -> Self:
-        """
-        Merge values into hx-vals. 
-        Pass `raw_js_str="js:{myVar: getVar()}"` to evaluate native Javascript.
+        """Merges values into `hx-vals`.
+
+        Pass `raw_js_str="js:{myVar: getVar()}"` to evaluate native JavaScript.
         """
         if raw_js_str:
             self.vals = raw_js_str
@@ -200,7 +269,7 @@ class HTMXAttributes(Serializable):
         return self
 
     def add_class(self, *classes: str) -> Self:
-        """Adds unique CSS classes while maintaining insertion order."""
+        """Appends unique CSS classes while maintaining insertion order."""
         if not classes:
             return self
 
@@ -217,10 +286,12 @@ class HTMXAttributes(Serializable):
         return self
 
     def attr(self, name: str, value: Any) -> Self:
+        """Injects a custom non-HTMX standard HTML attribute."""
         self.attrs[name] = value
         return self
 
     def event(self, name: str, handler: str) -> Self:
+        """Binds an inline event handler to `hx-on:{name}`."""
         self.on[name] = handler
         return self
 
@@ -229,8 +300,7 @@ class HTMXAttributes(Serializable):
     # ------------------------------------------------------------------
 
     def to_dict(self) -> dict[str, Any]:
-        """Serialize into HTML attributes."""
-        # Load standard user-defined attrs first so they don't overwrite HTMX logic
+        """Serializes attributes into a clean dictionary of final HTML attributes."""
         data: dict[str, Any] = dict(self.attrs) if self.attrs else {}
 
         if self.id:
@@ -243,7 +313,7 @@ class HTMXAttributes(Serializable):
             if value is None:
                 continue
 
-            # HTMX expects explicit string "true"/"false" for boolean configurations
+            # HTMX expects explicit lowercase string "true"/"false" for booleans
             if isinstance(value, bool):
                 data[html_name] = str(value).lower()
             else:
@@ -265,25 +335,24 @@ class HTMXAttributes(Serializable):
     # ------------------------------------------------------------------
 
     def render(self) -> str:
-        """Render fields directly to a valid HTML attribute string."""
+        """Renders attributes directly into a safe, escaped HTML attribute string."""
         html_parts = []
         for key, value in self.to_dict().items():
-            # Standard HTML booleans (like `disabled`, `checked` passed via `self.attrs`)
             if isinstance(value, bool):
                 if value:
                     html_parts.append(key)
                 continue
-                
-            html_parts.append(f'{key}="{escape(str(value), quote=True)}"')
-            
+
+            html_parts.append(f'{key}="{escape(str(value), quote=True)}"_{""}')
+
         return " ".join(html_parts)
 
     # ------------------------------------------------------------------
-    # Helpers
+    # Magic Methods
     # ------------------------------------------------------------------
 
     def __bool__(self) -> bool:
-        """Optimized truthiness validation avoiding full JSON string serialization."""
+        """Optimized truthiness validation avoiding heavy JSON serialization."""
         return bool(
             self.id
             or self.css_class
