@@ -22,13 +22,13 @@ For example, individual applications may independently implement:
 * Realtime broadcasting
 * Common service abstractions
 
-djangospice_framework provides these capabilities as a shared runtime.
+`djangospice-framework` provides these capabilities as a shared runtime.
 
 This gives applications a common architecture and allows modules to remain focused on their actual domain.
 
 ### Design goals
 
-djangospice_framework is designed around several principles:
+djangospice-framework is designed around several principles:
 
 * **Reusable** — common functionality should be implemented once.
 * **Modular** — functionality should be composed through independent components.
@@ -40,7 +40,7 @@ djangospice_framework is designed around several principles:
 
 ## Installation
 
-Install djangospice_framework from PyPI:
+Install djangospice-framework from PyPI:
 
 ```bash
 pip install djangospice-framework
@@ -50,7 +50,7 @@ pip install djangospice-framework
 
 ## Basic Usage
 
-Once installed, djangospice_framework components can be imported by Django applications and modules.
+Once installed, djangospice-framework components can be imported by Django applications and modules.
 
 For example, using the common model infrastructure:
 
