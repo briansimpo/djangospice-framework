@@ -10,7 +10,7 @@ jobs:
 
     environment:
       name: pypi
-      url: https://pypi.org/p/djangospice_framework
+      url: https://pypi.org/p/djangospice-framework
 
     permissions:
       id-token: write
