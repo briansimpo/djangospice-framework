@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "djangospice-framework"
-version = "0.1.0"
+version = "0.2.0"
 description = "Application Runtime Framework for building Django apps."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -83,10 +83,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/briansimpo/djangospice_framework"
-Documentation = "https://github.com/briansimpo/djangospice_framework#readme"
-Source = "https://github.com/briansimpo/djangospice_framework"
-Issues = "https://github.com/briansimpo/djangospice_framework/issues"
+Homepage = "https://github.com/briansimpo/djangospice-framework"
+Documentation = "https://github.com/briansimpo/djangospice-framework#readme"
+Source = "https://github.com/briansimpo/djangospice-framework"
+Issues = "https://github.com/briansimpo/djangospice-framework/issues"
 
 # --- Hatch Build Configuration ---
 [tool.hatch.build.targets.wheel]
