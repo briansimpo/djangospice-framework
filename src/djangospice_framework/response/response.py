@@ -99,13 +99,17 @@ class Response(Serializable):
     # ------------------------------------------------------------------
 
     @classmethod
-    def make(cls, template: str, **payload: Any) -> Self:
+    def make(cls, *, template: str | None = None, status: int = 200, payload: Mapping[str, Any] | Payload | None = None, **context: Any) -> Self:
         """
-        Factory method to instantiate a standard template-driven UI response.
+        Create a response with an optional initial payload.
         """
+        data = Payload(payload or {})
+        data.update(context)
+
         return cls(
             template=template,
-            payload=Payload(payload),
+            status=status,
+            payload=data,
         )
 
     @classmethod
