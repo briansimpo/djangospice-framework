@@ -1,14 +1,14 @@
-# djangospice_framework
+# djangospice-framework
 
 **Application Runtime Framework for building Django apps**
 
-`djangospice_framework` is the application runtime for building modular Django applications.
+`djangospice-framework` is the application runtime for building modular Django applications.
 
 It is designed to provide a consistent foundation for building large Django application ecosystems without repeatedly implementing the same infrastructure in every application.
 
 ---
 
-## Why djangospice_framework?
+## Why djangospice-framework?
 
 Large Django projects often accumulate infrastructure that gets duplicated across applications.
 
@@ -43,7 +43,7 @@ djangospice_framework is designed around several principles:
 Install djangospice_framework from PyPI:
 
 ```bash
-pip install djangospice_framework
+pip install djangospice-framework
 ```
 
 ---
@@ -68,7 +68,7 @@ The exact capabilities available depend on the components being used by the appl
 
 # Core Components
 
-djangospice_framework is organized around reusable infrastructure rather than business-domain applications.
+`djangospice-framework` is organized around reusable infrastructure rather than business-domain applications.
 
 ## Database and Models
 
@@ -135,7 +135,7 @@ This allows modules to use async operations where appropriate while keeping comm
 
 ## Files
 
-djangospice_framework provides common abstractions for file-related functionality, allowing applications to work with files without repeatedly implementing storage and file-handling patterns.
+`djangospice-framework` provides common abstractions for file-related functionality, allowing applications to work with files without repeatedly implementing storage and file-handling patterns.
 
 ---
 
@@ -155,14 +155,14 @@ Typical use cases include:
 
 # Application Modules
 
-djangospice_framework is **not intended to be a standalone business application**.
+`djangospice-framework` is **not intended to be a standalone business application**.
 
 Instead, it provides the runtime used by applications and modules.
 
 For example:
 
 ```text
-djangospice_framework
+djangospice-framework
     │
     ├── billing
     ├── notification
@@ -181,7 +181,7 @@ This keeps domain logic out of the framework.
 
 # Example
 
-A module can build its domain logic on top of djangospice_framework:
+A module can build its domain logic on top of `djangospice-framework`:
 
 ```python
 from djangospice_framework.db.models import BaseModel
@@ -195,7 +195,7 @@ class Invoice(BaseModel):
     )
 ```
 
-The module can then use other djangospice_framework infrastructure for events, notifications, UI, HTTP responses, tables, files, and other common functionality.
+The module can then use other `djangospice-framework` infrastructure for events, notifications, UI, HTTP responses, tables, files, and other common functionality.
 
 The result is a module that contains primarily **business/domain logic**, rather than infrastructure boilerplate.
 
