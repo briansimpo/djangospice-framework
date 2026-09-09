@@ -1,10 +1,12 @@
 import logging
-from typing import List, Type
+from typing import TYPE_CHECKING, List, Type
 
 from .celery import CeleryAdapter
 from .registry import EventRegistry
-from .base import BaseEvent
 from .listener import EventListener
+
+if TYPE_CHECKING:
+    from .base import BaseEvent
 
 logger = logging.getLogger(__name__)
 
