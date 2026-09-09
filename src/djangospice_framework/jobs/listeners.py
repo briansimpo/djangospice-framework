@@ -1,7 +1,8 @@
+from djangospice_framework.events import EventListener, listen
 
-from djangospice_framework.events import BaseEvent, EventListener, listen
-from .broadcast import broadcast_job_event
+from .broadcast import broadcast_job
 from .events import (
+    JobEvent,
     JobStartedEvent,
     JobProgressedEvent,
     JobCompletedEvent,
@@ -20,29 +21,29 @@ class JobBroadcastListener(EventListener):
 
     retry_on = (ConnectionResetError, TimeoutError)
     max_retries = 5
-    retry_backoff = 30 
+    retry_backoff = 30
 
+    def handle(self, event: JobEvent) -> None:
+        data = {}
 
-    def handle(self, event: BaseEvent) -> None:
-        if isinstance(event, JobStartedEvent):
-            broadcast_job_event(event.job, "STARTED")
-
-        elif isinstance(event, JobProgressedEvent):
-            broadcast_job_event(
-                event.job, 
-                "PROGRESS", 
-                {
-                    "progress": event.job.percent,
-                    "current": event.current,
-                    "total": event.total,
-                    "message": event.message,
-                }
-            )
+        if isinstance(event, JobProgressedEvent):
+            data = {
+                "message": event.message,
+                "extra": event.extra,
+            }
 
         elif isinstance(event, JobCompletedEvent):
-            # Safe unpack in case result is wrapped in a JobResult object
-            result_value = getattr(event.result, "value", event.result)
-            broadcast_job_event(event.job, "SUCCESS", {"result": result_value})
+            data = {
+                "result": getattr(event.result, "value", event.result),
+            }
 
         elif isinstance(event, JobFailedEvent):
-            broadcast_job_event(event.job, "FAILURE", {"error": str(event.exception)})
+            data = {
+                "error": event.error,
+            }
+
+        broadcast_job(
+            job=event.job,
+            event=event,
+            data=data,
+        )
