@@ -38,6 +38,13 @@ djangospice-framework is designed around several principles:
 
 ---
 
+## Requirements
+
+* Python 3.12+
+* Django 5.0+
+
+---
+
 ## Installation
 
 Install djangospice-framework from PyPI:
