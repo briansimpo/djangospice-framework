@@ -22,9 +22,4 @@ class BaseEvent(Serializable, ABC):
 
     def __str__(self) -> str:
         return self.name
-
-    def publish(self):
-        from .dispatcher import Event
-        Event.dispatch(self)
-    
     
