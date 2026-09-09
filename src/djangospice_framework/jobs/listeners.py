@@ -14,7 +14,7 @@ from .events import (
 @listen(JobProgressedEvent)
 @listen(JobCompletedEvent)
 @listen(JobFailedEvent)
-class JobListener(EventListener):
+class JobEventListener(EventListener):
 
     should_queue = True
     queue_name = "job-notifications"
