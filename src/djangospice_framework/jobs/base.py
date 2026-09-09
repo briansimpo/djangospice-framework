@@ -20,6 +20,7 @@ class Job(Serializable):
     """
     Base executable execution unit.
     """
+    user_id: Any | None = None
     queue: str = "default"
     retries: int = 0
     backoff: int = 0 
