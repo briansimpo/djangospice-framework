@@ -35,7 +35,11 @@ class JobDispatcher:
 
         def _enqueue():
             # Broadcast queued state to your WebSocket listeners safely on commit
-            Event.dispatch(JobQueuedEvent(job=job))
+            Event.dispatch(
+                JobQueuedEvent(
+                    job=job
+                )
+            )
             
             # Pass full execution context to the adapter
             celery = CeleryAdapter()
