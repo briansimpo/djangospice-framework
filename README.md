@@ -53,26 +53,6 @@ pip install djangospice-framework
 
 ---
 
-## Basic Usage
-
-Once installed, `djangospice-framework` components can be imported by Django applications and modules.
-
-For example, using the common model infrastructure:
-
-```python
-from django.db import models
-
-from djangospice_framework.db.models import BaseModel
-
-
-class Customer(BaseModel):
-    name = models.CharField(max_length=255)
-```
-
-The exact capabilities available depend on the components being used by the application.
-
----
-
 # Core Components
 
 `djangospice-framework` is organized around reusable infrastructure rather than business-domain applications.
@@ -93,7 +73,7 @@ The database layer is intended to eliminate repetitive model infrastructure whil
 
 The event system provides a decoupled mechanism for applications to communicate.
 
-Instead of tightly coupling one application component to another, a component can dispatch an event and allow listeners to react to it.
+Instead of tightly coupling one application component to another, a component can dispatch an event and allow listeners to react.
 
 Conceptually:
 
@@ -164,35 +144,56 @@ For example:
 
 ```text
 job_started
-      → djangospice:job_started
+    → djangospice:job_started
 
 job_progressed
-      → djangospice:job_progressed
+    → djangospice:job_progressed
 
 job_completed
-      → djangospice:job_completed
+    → djangospice:job_completed
 
 alert
-      → djangospice:alert
+    → djangospice:alert
 ```
 
 ---
 
-## Client Runtime
+# Client Runtime
 
-The framework includes a small browser-side runtime as Django static assets.
+The framework includes a small browser-side runtime distributed as Django static assets.
 
 The client runtime provides:
 
 * Realtime WebSocket communication
-* Alert dispatching
+* Browser `CustomEvent` dispatching
+* Alert routing to application-provided renderers
 * Client-side job state management
+* Job lifecycle events and results
+* Local persistence of the latest job state
 
 The JavaScript is included with the Python package and does not require a separate npm package.
 
-### Including the Runtime
+The client runtime is intentionally framework-level infrastructure. It does not require a particular frontend framework and does not impose a UI library.
 
-The framework JavaScript can be included using Django's static files:
+---
+
+## Production Client Setup
+
+The recommended production setup is to initialize the client runtime once from the application's base layout.
+
+Install the package:
+
+```bash
+pip install djangospice-framework
+```
+
+Configure Django static files normally and collect the framework assets during deployment:
+
+```bash
+python manage.py collectstatic
+```
+
+Then load the runtime from the package's static assets:
 
 ```html
 {% load static %}
@@ -202,57 +203,161 @@ The framework JavaScript can be included using Django's static files:
         Realtime,
         Alert,
         Job,
-    } from "{% static 'djangospice/js/index.js' %}";
+    } from "{% static 'djangospice_framework/js/index.js' %}";
 </script>
 ```
 
-Applications can then configure the client runtime during application startup.
+The runtime should normally be initialized once per browser page/application shell rather than independently by individual modules.
 
 ---
 
-## Realtime Client
+## Recommended Initialization
 
-`Realtime` manages the WebSocket connection and converts incoming server events into browser events.
+A production application should initialize the three client services from its main layout:
+
+```html
+{% load static %}
+
+<script type="module">
+    import {
+        Realtime,
+        Alert,
+        Job,
+    } from "{% static 'djangospice_framework/js/index.js' %}";
+
+    const realtime = new Realtime("/ws/realtime/");
+
+    realtime.connect();
+
+    Alert.register(
+        "toast",
+        new ToastRenderer(),
+    );
+
+    Alert.initialize();
+
+    Job.initialize();
+</script>
+```
+
+The application owns the actual renderer implementation and UI. The framework owns the client runtime and event/state infrastructure.
+
+Keep this initialization in one place. Do not create multiple `Realtime` instances for the same application connection unless the application explicitly requires separate realtime channels.
+
+---
+
+# Realtime Client
+
+`Realtime` manages the WebSocket connection and converts incoming server messages into browser events.
 
 ```javascript
-import { Realtime } from "djangospice";
+import { Realtime } from "djangospice_framework";
 
 const realtime = new Realtime("/ws/realtime/");
 
 realtime.connect();
 ```
 
-Once connected, server events are available as browser events.
+The server event name is preserved and exposed using the `djangospice:` browser-event prefix.
 
 For example:
+
+```text
+job_started
+    ↓
+djangospice:job_started
+
+job_progressed
+    ↓
+djangospice:job_progressed
+
+job_completed
+    ↓
+djangospice:job_completed
+```
+
+Applications can consume events with standard browser event listeners:
 
 ```javascript
 document.addEventListener(
     "djangospice:job_progressed",
     (event) => {
-        console.log(event.detail);
+        const { job } = event.detail;
+
+        console.log(job);
     },
 );
 ```
 
-The realtime client is intentionally domain-agnostic. It does not know how jobs, notifications, or alerts should be rendered.
+The realtime client is domain-agnostic. It does not decide whether an event should update a table, progress bar, notification, dashboard, or other UI.
 
 ---
 
-## Alerts
+## Application Event Handlers
+
+Application code should subscribe to the framework events it needs:
+
+```javascript
+function handleJobProgress(event) {
+    const { job } = event.detail;
+
+    const progress = document.querySelector(
+        `[data-job-id="${job.id}"]`
+    );
+
+    if (!progress) {
+        return;
+    }
+
+    progress.value = job.percent ?? 0;
+}
+
+document.addEventListener(
+    "djangospice:job_progressed",
+    handleJobProgress,
+);
+```
+
+When registering long-lived listeners from application components, retain the handler reference so it can be removed when the component is destroyed:
+
+```javascript
+document.addEventListener(
+    "djangospice:job_progressed",
+    handleJobProgress,
+);
+
+// Later:
+document.removeEventListener(
+    "djangospice:job_progressed",
+    handleJobProgress,
+);
+```
+
+This prevents duplicate handlers when pages or components are initialized more than once.
+
+---
+
+# Alerts
 
 The client `Alert` API connects realtime alert events to application-provided renderers.
 
-It does not implement a specific UI such as a toast, modal, or inline alert.
+It does not implement a specific UI such as a toast, modal, banner, or inline alert.
 
-### Registering a Renderer
+## Registering a Renderer
+
+Register the renderers used by the application:
 
 ```javascript
-import { Alert } from "djangospice";
+import { Alert } from "djangospice_framework";
 
 Alert.register(
     "toast",
     new ToastRenderer(),
+);
+
+Alert.register(
+    "modal",
+    new ModalRenderer(),
 );
 
 Alert.initialize();
@@ -267,6 +372,8 @@ class ToastRenderer {
     }
 }
 ```
+
+A renderer should treat the server-provided alert data as input and remain responsible only for presentation.
 
 The server can specify the renderer:
 
@@ -307,18 +414,20 @@ Alert.initialize();
 
 This allows the framework to remain independent of any particular frontend UI library.
 
+If an application receives an alert for a renderer that it has not registered, the application should ensure that the server only requests renderers supported by the current client.
+
 ---
 
-## Jobs
+# Jobs
 
 The client `Job` API maintains the latest state of server-side jobs.
 
 It listens for job lifecycle events and stores the current job state on the client.
 
-### Initialization
+## Initialization
 
 ```javascript
-import { Job } from "djangospice";
+import { Job } from "djangospice_framework";
 
 Job.initialize();
 ```
@@ -333,15 +442,19 @@ djangospice:job_completed
 djangospice:job_failed
 ```
 
-### Getting a Job
+---
+
+## Getting a Job
 
 ```javascript
 const job = Job.get(jobId);
 
-console.log(job.status);
-console.log(job.current);
-console.log(job.total);
-console.log(job.percent);
+if (job) {
+    console.log(job.status);
+    console.log(job.current);
+    console.log(job.total);
+    console.log(job.percent);
+}
 ```
 
 For example:
@@ -357,21 +470,27 @@ For example:
 }
 ```
 
-### Checking for a Job
+---
+
+## Checking for a Job
 
 ```javascript
 if (Job.has(jobId)) {
     const job = Job.get(jobId);
+
+    console.log(job);
 }
 ```
 
-### Listing Jobs
+---
+
+## Listing Jobs
 
 ```javascript
 const jobs = Job.all();
 ```
 
-This can be used to build a jobs panel or job center:
+For example:
 
 ```javascript
 const activeJobs = Job.all().filter(
@@ -379,7 +498,13 @@ const activeJobs = Job.all().filter(
 );
 ```
 
-### Removing Jobs
+This can be used to build a jobs panel or job center.
+
+---
+
+## Removing Jobs
+
+Remove one locally stored job:
 
 ```javascript
 Job.remove(jobId);
@@ -395,7 +520,63 @@ The client stores the latest job state so that job information can survive page 
 
 Client-side storage is a cache for continuity. The server remains the authoritative source of job state.
 
-### Job Results
+---
+
+## Job Lifecycle UI
+
+Applications can build UI directly from the job state and lifecycle events.
+
+For example:
+
+```javascript
+document.addEventListener(
+    "djangospice:job_progressed",
+    (event) => {
+        const { job } = event.detail;
+
+        updateProgressBar(
+            job.id,
+            job.percent,
+        );
+    },
+);
+```
+
+Completion can update the UI and expose the result:
+
+```javascript
+document.addEventListener(
+    "djangospice:job_completed",
+    (event) => {
+        const { job, result } = event.detail;
+
+        markJobCompleted(job.id);
+
+        if (result?.file_url) {
+            showDownloadLink(result.file_url);
+        }
+    },
+);
+```
+
+Failure can be handled separately:
+
+```javascript
+document.addEventListener(
+    "djangospice:job_failed",
+    (event) => {
+        const { job } = event.detail;
+
+        showJobError(job);
+    },
+);
+```
+
+The framework does not prescribe the UI for any of these states.
+
+---
+
+## Job Results
 
 Job completion events include the job's actual result.
 
@@ -417,31 +598,43 @@ document.addEventListener(
         const { job, result } = event.detail;
 
         console.log(job);
-        console.log(result.file_url);
+
+        if (result?.file_url) {
+            console.log(result.file_url);
+        }
     },
 );
 ```
 
-`Job` manages job state; it does not dictate how jobs are displayed.
+`Job` manages job state; it does not dictate how job results are displayed.
 
-Applications can build their own progress bars, job centers, download links, notifications, or other UI on top of the job events and state API.
+Applications can build:
+
+* Progress bars
+* Job centers
+* Download links
+* Completion notifications
+* Error messages
+* Background-operation indicators
+
+on top of the job state and event APIs.
 
 ---
 
-## Recommended Client Initialization
+# Production Application Pattern
 
-A typical application can initialize the framework client runtime once during startup:
+A typical application can keep framework initialization in a single module.
 
-```html
-{% load static %}
+For example:
 
-<script type="module">
-    import {
-        Realtime,
-        Alert,
-        Job,
-    } from "{% static 'djangospice/js/index.js' %}";
+```javascript
+import {
+    Realtime,
+    Alert,
+    Job,
+} from "djangospice_framework";
 
+export function initializeDjangospice() {
     const realtime = new Realtime("/ws/realtime/");
 
     realtime.connect();
@@ -453,14 +646,122 @@ A typical application can initialize the framework client runtime once during st
 
     Alert.initialize();
     Job.initialize();
-</script>
+
+    return {
+        realtime,
+    };
+}
 ```
 
-The application provides the actual UI renderers while `djangospice-framework` provides the runtime and event infrastructure.
+Then initialize it once from the application's entry point:
+
+```javascript
+import { initializeDjangospice } from "./djangospice.js";
+
+initializeDjangospice();
+```
+
+This keeps framework startup separate from individual feature modules.
 
 ---
 
-## Async Support
+# Using the Client with HTMX
+
+The client runtime can be used alongside HTMX.
+
+HTMX remains responsible for HTTP-driven DOM updates while the Djangospice client runtime handles realtime events and client-side state.
+
+For example:
+
+```javascript
+document.addEventListener(
+    "djangospice:job_completed",
+    (event) => {
+        const { job } = event.detail;
+
+        if (job.id === currentJobId) {
+            htmx.trigger(
+                document.body,
+                "job-completed",
+                { job },
+            );
+        }
+    },
+);
+```
+
+This allows an application to combine:
+
+```text
+Django HTTP
+    │
+    ├── HTMX → DOM updates
+    │
+    └── WebSocket → Djangospice client events
+                         │
+                         ├── Alerts
+                         ├── Job state
+                         └── Application UI
+```
+
+The framework does not require HTMX. This is simply a supported integration pattern for applications that already use it.
+
+---
+
+# Client Runtime Responsibilities
+
+The client runtime is responsible for:
+
+* Establishing the configured realtime connection
+* Receiving server realtime messages
+* Converting server events into browser `CustomEvent`s
+* Routing alert events to registered renderers
+* Maintaining the latest client-side job state
+* Exposing job lifecycle information to application code
+
+The application remains responsible for:
+
+* UI rendering
+* Toast/modal implementations
+* Progress bars
+* Job centers
+* Page-specific event handling
+* Navigation
+* Application-specific error presentation
+* Authentication and authorization configuration
+* Deployment-specific WebSocket routing
+
+This separation keeps `djangospice-framework` independent of a particular frontend application.
+
+---
+
+# Client Event Contract
+
+The stable browser event contract is:
+
+```text
+djangospice:<event.name>
+```
+
+where `<event.name>` is the server event name.
+
+For example:
+
+```text
+Python Event.name
+        ↓
+WebSocket message
+        ↓
+djangospice:<event.name>
+        ↓
+Browser CustomEvent
+```
+
+Applications should subscribe to the public `djangospice:*` events rather than depending on internal client implementation details.
+
+---
+
+# Async Support
 
 The runtime provides common abstractions for asynchronous application functionality.
 
@@ -468,7 +769,7 @@ This allows modules to use async operations where appropriate while keeping comm
 
 ---
 
-## Jobs and Background Processing
+# Jobs and Background Processing
 
 The runtime provides infrastructure for dispatching and tracking background jobs.
 
@@ -485,13 +786,13 @@ Client applications can consume these updates through the realtime runtime.
 
 ---
 
-## Files
+# Files
 
 `djangospice-framework` provides common abstractions for file-related functionality, allowing applications to work with files without repeatedly implementing storage and file-handling patterns.
 
 ---
 
-## Imports and Exports
+# Imports and Exports
 
 Reusable import/export infrastructure allows applications to implement data exchange consistently.
 
@@ -520,7 +821,6 @@ djangospice-framework
     ├── notification
     ├── workflow
     ├── documents
-    ├── helpdesk
     ├── CRM
     └── workforce
 ```
