@@ -2,19 +2,19 @@ from djangospice_framework.core.payload import Payload
 from djangospice_framework.events import EventListener, listen
 
 from .broadcast import broadcast_event
-from .events import (
-    JobCompletedEvent,
+from .events import (    
     JobEvent,
-    JobFailedEvent,
-    JobProgressedEvent,
-    JobStartedEvent,
+    JobCompleted,
+    JobFailed,
+    JobProgressed,
+    JobStarted,
 )
 
 
-@listen(JobStartedEvent)
-@listen(JobProgressedEvent)
-@listen(JobCompletedEvent)
-@listen(JobFailedEvent)
+@listen(JobStarted)
+@listen(JobProgressed)
+@listen(JobCompleted)
+@listen(JobFailed)
 class JobEventListener(EventListener):
 
     should_queue = True
@@ -27,14 +27,14 @@ class JobEventListener(EventListener):
     def handle(self, event: JobEvent) -> None:
         payload = Payload()
 
-        if isinstance(event, JobProgressedEvent):
+        if isinstance(event, JobProgressed):
             payload.set("message", event.message)
             payload.set("extra", event.extra)
 
-        elif isinstance(event, JobCompletedEvent):
+        elif isinstance(event, JobCompleted):
             payload.set("result", event.result)
 
-        elif isinstance(event, JobFailedEvent):
+        elif isinstance(event, JobFailed):
             payload.set("error", event.error)
 
         broadcast_event(
