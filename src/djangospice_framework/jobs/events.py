@@ -34,7 +34,7 @@ class JobProgressedEvent(JobEvent):
 @dataclass(frozen=True, slots=True)
 class JobCompletedEvent(JobEvent):
     name = "job.completed"
-    result = None
+    result: Any = None
 
 
 @dataclass(frozen=True, slots=True)
