@@ -15,29 +15,29 @@ class JobEvent(BaseEvent):
 
 
 @dataclass(frozen=True, slots=True)
-class JobQueuedEvent(JobEvent):
-    name = "job.queued"
+class JobQueued(JobEvent):
+    name = "job_queued"
 
 
 @dataclass(frozen=True, slots=True)
-class JobStartedEvent(JobEvent):
-    name = "job.started"
+class JobStarted(JobEvent):
+    name = "job_started"
 
 
 @dataclass(frozen=True, slots=True)
-class JobProgressedEvent(JobEvent):
-    name = "job.progressed"
+class JobProgressed(JobEvent):
+    name = "job_progressed"
     message: str = ""
     extra: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
-class JobCompletedEvent(JobEvent):
-    name = "job.completed"
+class JobCompleted(JobEvent):
+    name = "job_completed"
     result: Any = None
 
 
 @dataclass(frozen=True, slots=True)
-class JobFailedEvent(JobEvent):
-    name = "job.failed"
+class JobFailed(JobEvent):
+    name = "job_failed"
     error: str = ""
