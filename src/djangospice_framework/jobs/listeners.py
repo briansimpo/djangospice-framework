@@ -1,12 +1,13 @@
+from djangospice_framework.core.payload import Payload
 from djangospice_framework.events import EventListener, listen
 
-from .broadcast import broadcast_job
+from .broadcast import broadcast_event
 from .events import (
-    JobEvent,
-    JobStartedEvent,
-    JobProgressedEvent,
     JobCompletedEvent,
+    JobEvent,
     JobFailedEvent,
+    JobProgressedEvent,
+    JobStartedEvent,
 )
 
 
@@ -24,26 +25,19 @@ class JobEventListener(EventListener):
     retry_backoff = 30
 
     def handle(self, event: JobEvent) -> None:
-        data = {}
+        payload = Payload()
 
         if isinstance(event, JobProgressedEvent):
-            data = {
-                "message": event.message,
-                "extra": event.extra,
-            }
+            payload.set("message", event.message)
+            payload.set("extra", event.extra)
 
         elif isinstance(event, JobCompletedEvent):
-            data = {
-                "result": getattr(event.result, "value", event.result),
-            }
+            payload.set("result", event.result)
 
         elif isinstance(event, JobFailedEvent):
-            data = {
-                "error": event.error,
-            }
+            payload.set("error", event.error)
 
-        broadcast_job(
-            job=event.job,
+        broadcast_event(
             event=event,
-            data=data,
+            data=payload.to_dict(),
         )
