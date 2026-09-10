@@ -67,7 +67,7 @@ class JobReporter:
             )
         )
 
-    def progress(self,job: Job, *, current: int, total: int, message: str = "", **extra: Any) -> None:
+    def progress(self,job: Job, current: int, total: int, message: str = "", **extra: Any) -> None:
         job.current = current
         job.total = total
         job.status = JobStatus.PROGRESS
@@ -91,7 +91,7 @@ class JobReporter:
             )
         )
 
-    def completed(self,job: Job, *, result: Any = None) -> None:
+    def completed(self,job: Job, result: Any = None) -> None:
         job.current = job.total
         job.status = JobStatus.COMPLETED
 
