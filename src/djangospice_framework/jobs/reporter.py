@@ -10,11 +10,11 @@ from .enums import JobStatus
 from .result import JobResult
 
 from .events import (
-    JobQueuedEvent,
-    JobStartedEvent,
-    JobProgressedEvent,
-    JobCompletedEvent,
-    JobFailedEvent,
+    JobQueued,
+    JobStarted,
+    JobProgressed,
+    JobCompleted,
+    JobFailed,
 )
 
 
@@ -48,7 +48,7 @@ class JobReporter:
         )
 
         Event.dispatch(
-            JobQueuedEvent(
+            JobQueued(
                 job=job,
             )
         )
@@ -64,7 +64,7 @@ class JobReporter:
         )
 
         Event.dispatch(
-            JobStartedEvent(
+            JobStarted(
                 job=job,
             )
         )
@@ -86,7 +86,7 @@ class JobReporter:
         )
 
         Event.dispatch(
-            JobProgressedEvent(
+            JobProgressed(
                 job=job,
                 message=message,
                 extra=extra,
@@ -108,7 +108,7 @@ class JobReporter:
         )
 
         Event.dispatch(
-            JobCompletedEvent(
+            JobCompleted(
                 job=job,
                 result=result,
             )
@@ -127,7 +127,7 @@ class JobReporter:
         )
 
         Event.dispatch(
-            JobFailedEvent(
+            JobFailed(
                 job=job,
                 error=error,
             )
