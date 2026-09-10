@@ -31,7 +31,7 @@ class JobDispatcher:
         countdown = total_seconds if total_seconds > 0 else None
 
         # 3. Freeze recursive object snapshot
-        serialized_payload = job.to_dict()
+        serialized_job = job.to_dict()
 
         def _enqueue():
             # Broadcast queued state to your WebSocket listeners safely on commit
@@ -44,7 +44,7 @@ class JobDispatcher:
             # Pass full execution context to the adapter
             celery = CeleryAdapter()
             celery.dispatch(
-                serialized_job=serialized_payload,
+                serialized_job=serialized_job,
                 queue=target_queue,
                 countdown=countdown,
                 task_id=job_id,
