@@ -7,6 +7,8 @@ from djangospice_framework.events.dispatcher import Event
 
 from .base import Job
 from .enums import JobStatus
+from .result import JobResult
+
 from .events import (
     JobQueuedEvent,
     JobStartedEvent,
@@ -91,7 +93,7 @@ class JobReporter:
             )
         )
 
-    def completed(self,job: Job, result: Any = None) -> None:
+    def completed(self,job: Job, result: JobResult = None) -> None:
         job.current = job.total
         job.status = JobStatus.COMPLETED
 
