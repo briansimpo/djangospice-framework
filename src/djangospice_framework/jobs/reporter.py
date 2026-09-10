@@ -93,24 +93,24 @@ class JobReporter:
             )
         )
 
-    def completed(self,job: Job, result: JobResult = None) -> None:
+    def completed(self,job: Job, job_result: JobResult = None) -> None:
         job.current = job.total
         job.status = JobStatus.COMPLETED
 
-        result_value = getattr(result, "value", result)
+        result = job_result.result if job_result else None
 
         self._sync_celery_meta(
             job.status,
             {
                 "percent": job.percent,
-                "result": result_value,
+                "result": result,
             },
         )
 
         Event.dispatch(
             JobCompletedEvent(
                 job=job,
-                result=result_value,
+                result=result,
             )
         )
 
