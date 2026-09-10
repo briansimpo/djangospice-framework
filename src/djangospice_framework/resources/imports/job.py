@@ -1,8 +1,8 @@
 import tablib
 from typing import Any
 from dataclasses import dataclass
-from djangospice_framework.jobs import Job, JobStatus
-from djangospice_framework.realtime.broadcast import Broadcast
+from djangospice_framework.core.payload import Payload
+from djangospice_framework.jobs import Job
 from djangospice_framework.resources import BaseResource
 from .dataset import TemporaryDataset 
 
@@ -46,10 +46,7 @@ class ResourceImportJob(Job):
                     message=f"Importing records. {self.percent}% completed."
                 )
             
-            payload = {
-                "total_rows": total_rows,
-                "message":  f"Successfully imported {total_rows} records.",
-                "status": JobStatus.SUCCESS
-            }
-            
-            Broadcast.user(user=self.user_id, data=payload)
+           
+            message = f"Successfully imported {total_rows} records.",
+
+            return Payload(total_rows=total_rows, message=message).to_dict()
