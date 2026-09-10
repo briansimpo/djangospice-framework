@@ -251,7 +251,7 @@ Keep this initialization in one place. Do not create multiple `Realtime` instanc
 `Realtime` manages the WebSocket connection and converts incoming server messages into browser events.
 
 ```javascript
-import { Realtime } from "djangospice_framework";
+import { Realtime } from "djangospice_framework/js/index.js";
 
 const realtime = new Realtime("/ws/realtime/");
 
@@ -463,7 +463,7 @@ For example:
 {
     id: "8d4f...",
     name: "reports.ResourceExportJob",
-    status: "PROGRESS",
+    status: "progress",
     current: 40,
     total: 100,
     percent: 40
@@ -494,7 +494,7 @@ For example:
 
 ```javascript
 const activeJobs = Job.all().filter(
-    (job) => job.status === "PROGRESS",
+    (job) => job.status === "progress",
 );
 ```
 
@@ -632,7 +632,7 @@ import {
     Realtime,
     Alert,
     Job,
-} from "djangospice_framework";
+} from "djangospice_framework/js/index.js";
 
 export function initializeDjangospice() {
     const realtime = new Realtime("/ws/realtime/");
