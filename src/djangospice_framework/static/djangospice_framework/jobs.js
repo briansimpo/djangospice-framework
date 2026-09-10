@@ -143,4 +143,8 @@ export class Job {
         this.jobs.clear();
         JobStore.clear();
     }
+    
+    static has(id) {
+        return this.jobs.has(id);
+    }
 }
