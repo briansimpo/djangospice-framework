@@ -9,4 +9,4 @@ class JobResult(Serializable):
     """
     Guarantees a uniform return interface for every background job execution.
     """
-    value: Any
+    result: Any
