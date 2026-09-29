@@ -7,7 +7,7 @@ from djangospice_framework.resources import BaseResource
 from .exporter import ResourceExporter
 
 
-@dataclass(kw_only=True)
+@dataclass
 class ResourceExportJob(Job):
     """Background job for heavy-duty data exports."""
     

@@ -7,7 +7,7 @@ from djangospice_framework.resources import BaseResource
 from .dataset import TemporaryDataset 
 
 
-@dataclass(kw_only=True)
+@dataclass
 class ResourceImportJob(Job):
     
     queue = "data-imports"
