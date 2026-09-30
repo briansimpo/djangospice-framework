@@ -57,7 +57,6 @@ class ModuleDiscovery:
     @classmethod
     def discover(
         cls,
-        *,
         module: str,
         callback: Callable[[type], None] | None = None,
         base_class: type[T] | None = None,
